@@ -1,4 +1,4 @@
-require "./breakpoint/version"
+require "./lib/breakpoint/version"
 
 module Breakpoint
   module Sass
