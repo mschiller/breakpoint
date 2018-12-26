@@ -1,40 +1,69 @@
-require 'compass'
-
-Compass::Frameworks.register("breakpoint", :path => "#{File.dirname(__FILE__)}/..")
+require "breakpoint/version"
 
 module Breakpoint
-  VERSION = "1.3"
-  DATE = "2012-08-28"
-end
-
-module Sass::Script::Functions
-  def is_breakpoint_list(breakpoint)
-    result = false unless breakpoint.class == Sass::Script::List && breakpoint.separator.to_s == 'comma'
-    Sass::Script::Bool.new(result)
-  end
-  def featureExists(feature, list)
-    testList = Array.new
-    listLength = list.to_a.length - 1
-
-    # Only check if length greater than zero
-    # Was throwing errors for floats (but strangely, not for ints)
-    if listLength > 0
-      for i in 0..listLength
-        if list.value[i].class == Sass::Script::List
-          subList = list.value[i].to_a.length - 1
-
-          for j in 0..subList
-            testList << list.value[i].value[j]
-          end
-        else
-          testList << list.value[i]
+  module Sass
+    # give credit to bootstrap-sass
+    class << self
+      # Inspired by Kaminari
+      def load!
+        if rails?
+          register_rails_engine
+        elsif hanami?
+          register_hanami
+        elsif sprockets?
+          register_sprockets
+        elsif defined?(::Sass) && ::Sass.respond_to?(:load_paths)
+          # The deprecated `sass` gem:
+          ::Sass.load_paths << stylesheets_path
         end
       end
-      result = testList.include?(feature)
-    else
-      result = false
-    end
 
-    Sass::Script::Bool.new(result)
+      # Paths
+      def gem_path
+        @gem_path ||= File.expand_path '..', File.dirname(__FILE__)
+      end
+
+      def stylesheets_path
+        File.join assets_path, 'stylesheets'
+      end
+
+      def javascripts_path
+        File.join assets_path, 'javascripts'
+      end
+
+      def assets_path
+        @assets_path ||= File.join gem_path, 'assets'
+      end
+
+      # Environment detection helpers
+      def sprockets?
+        defined?(::Sprockets)
+      end
+
+      def rails?
+        defined?(::Rails)
+      end
+
+      def hanami?
+        defined?(::Hanami)
+      end
+
+      private
+
+      def register_rails_engine
+        require 'breakpoint/engine'
+      end
+
+      def register_sprockets
+        Sprockets.append_path(stylesheets_path)
+        Sprockets.append_path(javascripts_path)
+      end
+
+      def register_hanami
+        Hanami::Assets.sources << assets_path
+      end
+    end
   end
 end
+
+Breakpoint::Sass.load!
