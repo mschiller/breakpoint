@@ -51,7 +51,7 @@ module Breakpoint
       private
 
       def register_rails_engine
-        require './lib/breakpoint/engine'
+        require 'breakpoint/engine'
       end
 
       def register_sprockets
