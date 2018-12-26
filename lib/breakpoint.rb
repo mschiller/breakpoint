@@ -1,17 +1,69 @@
-base_directory  = File.expand_path(File.join(File.dirname(__FILE__), '..'))
-breakpoint_stylesheets_path = File.join(base_directory, 'stylesheets')
-
-if (defined? Compass)
-  require 'sassy-maps'
-  Compass::Frameworks.register(
-    "breakpoint",
-    :path => base_directory
-  )
-else
-  ENV["SASS_PATH"] = [ENV["SASS_PATH"], breakpoint_stylesheets_path].compact.join(File::PATH_SEPARATOR)
-end
+require "breakpoint/version"
 
 module Breakpoint
-  VERSION = "2.7.1"
-  DATE = "2016-12-07"
+  module Sass
+    # give credit to bootstrap-sass
+    class << self
+      # Inspired by Kaminari
+      def load!
+        if rails?
+          register_rails_engine
+        elsif hanami?
+          register_hanami
+        elsif sprockets?
+          register_sprockets
+        elsif defined?(::Sass) && ::Sass.respond_to?(:load_paths)
+          # The deprecated `sass` gem:
+          ::Sass.load_paths << stylesheets_path
+        end
+      end
+
+      # Paths
+      def gem_path
+        @gem_path ||= File.expand_path '..', File.dirname(__FILE__)
+      end
+
+      def stylesheets_path
+        File.join assets_path, 'stylesheets'
+      end
+
+      def javascripts_path
+        File.join assets_path, 'javascripts'
+      end
+
+      def assets_path
+        @assets_path ||= File.join gem_path, 'assets'
+      end
+
+      # Environment detection helpers
+      def sprockets?
+        defined?(::Sprockets)
+      end
+
+      def rails?
+        defined?(::Rails)
+      end
+
+      def hanami?
+        defined?(::Hanami)
+      end
+
+      private
+
+      def register_rails_engine
+        require 'breakpoint/engine'
+      end
+
+      def register_sprockets
+        Sprockets.append_path(stylesheets_path)
+        Sprockets.append_path(javascripts_path)
+      end
+
+      def register_hanami
+        Hanami::Assets.sources << assets_path
+      end
+    end
+  end
 end
+
+Breakpoint::Sass.load!

@@ -1,4 +1,4 @@
-require './lib/breakpoint'
+require 'breakpoint'
 
 Gem::Specification.new do |s|
   # Release Specific Information
